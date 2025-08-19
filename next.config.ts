@@ -1,10 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  basePath: '/next-ssr',
-  assetPrefix: '/next-ssr',
+  ...(process.env.NODE_ENV === 'production' && { basePath: '/next-ssr' }),
   trailingSlash: false,
-  output: 'standalone'
+  output: 'standalone',
+  images: {
+    unoptimized: true
+  }
 };
 
 export default nextConfig;

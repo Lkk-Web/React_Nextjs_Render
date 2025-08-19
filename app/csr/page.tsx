@@ -245,13 +245,13 @@ export default function CSRPage() {
           {/* 导航链接 */}
           <div className="mt-4 flex space-x-4">
             <a
-              href="/"
+              href={process.env.NODE_ENV === 'production' ? "/next-ssr/" : "/"}
               className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
             >
               SSR 版本
             </a>
             <a
-              href="/csr"
+              href={process.env.NODE_ENV === 'production' ? "/next-ssr/csr" : "/csr"}
               className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
             >
               CSR 版本 (当前)
