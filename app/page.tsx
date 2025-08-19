@@ -162,20 +162,46 @@ function StatsPanel({
 }
 
 export default function Home() {
-  // 记录服务端渲染开始时间
-  const renderStartTime = Date.now();
+  // 记录服务端渲染开始时间（在组件开始时记录）
+  const renderStartTime = useMemo(() => {
+    if (typeof window === "undefined") {
+      return process.hrtime.bigint();
+    }
+    return null;
+  }, []);
 
   // 生成大量数据 - 在服务端渲染时会执行
-  const largeDataset = useMemo(() => generateLargeDataset(1000), []);
+  const largeDataset = useMemo(() => {
+    const startTime = Date.now();
+    const data = generateLargeDataset(1000);
+    const endTime = Date.now();
+    console.log(`数据生成耗时: ${endTime - startTime}ms`);
+    return data;
+  }, []);
 
   // 执行复杂计算 - 测试CPU密集型操作
-  const calculationResult = useMemo(
-    () => performComplexCalculation(largeDataset),
-    [largeDataset]
-  );
+  const calculationResult = useMemo(() => {
+    const startTime = Date.now();
+    const result = performComplexCalculation(largeDataset);
+    const endTime = Date.now();
+    console.log(`复杂计算耗时: ${endTime - startTime}ms`);
+    return result;
+  }, [largeDataset]);
 
-  // 计算服务端处理时间
-  const serverProcessTime = Date.now() - renderStartTime;
+  // 计算服务端渲染总时间（包括处理和渲染）
+  const serverRenderTime = useMemo(() => {
+    if (typeof window === "undefined" && renderStartTime) {
+      // 在这里计算从组件开始到现在的总时间
+      const currentTime = process.hrtime.bigint();
+      const totalRenderTime = Number(currentTime - renderStartTime) / 1000000; // 转换为毫秒
+
+      console.log(`服务端渲染总时间: ${totalRenderTime.toFixed(2)}ms`);
+      return Math.round(totalRenderTime * 100) / 100; // 保留两位小数
+    } else {
+      // 客户端环境：不显示渲染时间
+      return 0;
+    }
+  }, [renderStartTime, largeDataset, calculationResult]); // 依赖所有主要计算结果
 
   // 生成更多渲染数据
   const chartData = useMemo(() => {
@@ -217,7 +243,9 @@ export default function Home() {
                 </span>
               </div>
               <span className="text-sm text-gray-600 dark:text-gray-300">
-                服务端处理时间: {serverProcessTime}ms
+                {typeof window === "undefined"
+                  ? `服务端渲染时间: ${serverRenderTime}ms`
+                  : "客户端渲染模式"}
               </span>
             </div>
           </div>
@@ -342,11 +370,11 @@ export default function Home() {
               </p>
             </div>
             <div>
-              <strong className="text-blue-700 dark:text-blue-300">
-                服务端处理时间:
+              <strong className="text-gray-700 dark:text-gray-300">
+                服务端渲染时间:
               </strong>
               <p className="text-blue-600 dark:text-blue-400">
-                {serverProcessTime}ms
+                {serverRenderTime}ms
               </p>
             </div>
           </div>
@@ -371,7 +399,7 @@ export default function Home() {
           <div className="text-center text-gray-600 dark:text-gray-400">
             <p>
               Next.js SSR 性能测试页面 - 生成时间: {new Date().toLocaleString()}{" "}
-              - 服务端处理时间: {serverProcessTime}ms
+              - 服务端渲染时间: {serverRenderTime}ms
             </p>
             <p className="mt-2 text-sm">
               此页面包含大量数据渲染、复杂计算和动画效果，用于测试服务端渲染的首屏加载性能
