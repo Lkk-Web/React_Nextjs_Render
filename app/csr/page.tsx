@@ -54,7 +54,11 @@ function UserCard({ user, index }: { user: any; index: number }) {
       <div className="flex items-center space-x-4 mb-4">
         <div className="relative">
           <Image
-            src={user.avatar}
+            src={
+              process.env.NODE_ENV === "production"
+                ? "/next-ssr/" + user.avatar
+                : user.avatar
+            }
             alt={user.name}
             width={60}
             height={60}
@@ -178,16 +182,19 @@ export default function CSRPage() {
         y: Math.sin(i * 0.1) * 100 + Math.random() * 50,
         z: Math.cos(i * 0.1) * 100 + Math.random() * 50,
       }));
-      
+
       setLargeDataset(dataset);
       setCalculationResult(calculation);
       setChartData(chart);
       setIsLoading(false);
-      
+
       // 测量从页面导航开始到首屏内容完全加载的时间
       requestAnimationFrame(() => {
-        const navigationStart = performance.timing?.navigationStart || performance.timeOrigin;
-        const currentTime = performance.now() + (performance.timing?.navigationStart || performance.timeOrigin);
+        const navigationStart =
+          performance.timing?.navigationStart || performance.timeOrigin;
+        const currentTime =
+          performance.now() +
+          (performance.timing?.navigationStart || performance.timeOrigin);
         const firstScreenTime = currentTime - navigationStart;
         setRenderTime(firstScreenTime);
       });
@@ -219,7 +226,11 @@ export default function CSRPage() {
             <div className="flex items-center space-x-4">
               <Image
                 className="dark:invert"
-                src="/next.svg"
+                src={
+                  process.env.NODE_ENV === "production"
+                    ? "/next-ssr/next.svg"
+                    : "/next.svg"
+                }
                 alt="Next.js logo"
                 width={120}
                 height={25}
@@ -245,13 +256,15 @@ export default function CSRPage() {
           {/* 导航链接 */}
           <div className="mt-4 flex space-x-4">
             <a
-              href={process.env.NODE_ENV === 'production' ? "/next-ssr/" : "/"}
+              href={process.env.NODE_ENV === "production" ? "/next-ssr/" : "/"}
               className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
             >
               SSR 版本
             </a>
             <a
-              href={process.env.NODE_ENV === 'production' ? "/next-ssr/csr" : "/csr"}
+              href={
+                process.env.NODE_ENV === "production" ? "/next-ssr/csr" : "/csr"
+              }
               className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
             >
               CSR 版本 (当前)
