@@ -162,13 +162,19 @@ function StatsPanel({
 }
 
 export default function Home() {
-  // 记录服务端渲染开始时间（每次都重新记录）
-  const renderStartTime = (() => {
-    if (typeof window === 'undefined') {
+  // 记录页面渲染开始时间
+  const renderStartTime = useMemo(() => {
+    if (typeof window === "undefined") {
+      // 服务端：使用 process.hrtime 记录高精度时间
       return process.hrtime.bigint();
+    } else {
+      // 客户端：使用 performance.now() 记录时间
+      return BigInt(Math.floor(performance.now() * 1000000)); // 转换为纳秒以保持一致性
     }
-    return null;
-  })();
+  }, []);
+
+  // 检测是否为客户端环境
+  const isClient = typeof window !== "undefined";
 
   // 生成大量数据 - 在服务端渲染时会执行
   const largeDataset = useMemo(() => {
@@ -188,24 +194,29 @@ export default function Home() {
     return result;
   }, [largeDataset]);
 
-  // 计算服务端渲染总时间（包括处理和渲染）- 每次都重新计算
-  const serverRenderTime = (() => {
-    if (typeof window === 'undefined' && renderStartTime) {
-      // 在这里计算从组件开始到现在的总时间
+  // 计算页面渲染时间（服务端和客户端通用）
+  const pageRenderTime = useMemo(() => {
+    if (typeof window === "undefined") {
+      // 服务端：计算从开始到现在的渲染时间
       const currentTime = process.hrtime.bigint();
-      const totalRenderTime = Number(currentTime - renderStartTime) / 1000000; // 转换为毫秒
-      
-      // 添加随机因子确保每次都不同
-      const randomFactor = Math.random() * 2; // 0-2ms的随机波动
-      const finalTime = totalRenderTime + randomFactor;
-      
-      console.log(`服务端渲染总时间: ${finalTime.toFixed(2)}ms (基础: ${totalRenderTime.toFixed(2)}ms)`);
-      return Math.round(finalTime * 100) / 100; // 保留两位小数
+      const renderTime = Number(currentTime - renderStartTime) / 1000000; // 转换为毫秒
+      const finalTime = Math.round(renderTime * 100) / 100;
+      console.log(`服务端渲染时间: ${finalTime}ms`);
+      return finalTime;
     } else {
-      // 客户端环境：不显示渲染时间
-      return 0;
+      // 获取页面导航开始时间，计算真实的页面加载时间
+      const navigationStart = performance.timing?.navigationStart || 0;
+      const pageLoadTime =
+        navigationStart > 0
+          ? performance.now() +
+            (navigationStart - performance.timing.fetchStart)
+          : performance.now();
+
+      const finalTime = Math.round(pageLoadTime * 100) / 100;
+      console.log(`客户端页面加载时间: ${finalTime}ms`);
+      return finalTime;
     }
-  })();
+  }, [renderStartTime, largeDataset, calculationResult]); // 依赖所有主要计算结果
 
   // 生成更多渲染数据
   const chartData = useMemo(() => {
@@ -247,9 +258,9 @@ export default function Home() {
                 </span>
               </div>
               <span className="text-sm text-gray-600 dark:text-gray-300">
-                {typeof window === "undefined"
-                  ? `服务端渲染时间: ${serverRenderTime}ms`
-                  : "客户端渲染模式"}
+                {isClient
+                  ? `页面加载时间: ${pageRenderTime}ms`
+                  : `服务端渲染时间: ${pageRenderTime}ms`}
               </span>
             </div>
           </div>
@@ -375,10 +386,10 @@ export default function Home() {
             </div>
             <div>
               <strong className="text-gray-700 dark:text-gray-300">
-                服务端渲染时间:
+                {isClient ? "页面加载时间:" : "服务端渲染时间:"}
               </strong>
               <p className="text-blue-600 dark:text-blue-400">
-                {serverRenderTime}ms
+                {pageRenderTime}ms
               </p>
             </div>
           </div>
@@ -403,7 +414,8 @@ export default function Home() {
           <div className="text-center text-gray-600 dark:text-gray-400">
             <p>
               Next.js SSR 性能测试页面 - 生成时间: {new Date().toLocaleString()}{" "}
-              - 服务端渲染时间: {serverRenderTime}ms - 请求ID: {Math.random().toString(36).substr(2, 9)}
+              - {isClient ? "页面加载时间" : "服务端渲染时间"}: {pageRenderTime}
+              ms
             </p>
             <p className="mt-2 text-sm">
               此页面包含大量数据渲染、复杂计算和动画效果，用于测试服务端渲染的首屏加载性能
