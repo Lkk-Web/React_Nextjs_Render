@@ -11,11 +11,13 @@ module.exports = {
       max_memory_restart: '1G',
       env: {
         NODE_ENV: 'production',
-        PORT: 30001
+        PORT: 30001,
+        NEXT_PUBLIC_BASE_PATH: '/next-ssr'
       },
       env_production: {
         NODE_ENV: 'production',
-        PORT: 30001
+        PORT: 30001,
+        NEXT_PUBLIC_BASE_PATH: '/next-ssr'
       }
     }
   ]
